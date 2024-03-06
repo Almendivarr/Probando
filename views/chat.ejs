@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Privado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fontisto/css/fontisto/fontisto.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('connect', () => {
+            console.log('Conectado al servidor');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const messageForm = document.getElementById('message-form');
+            const messageInput = document.getElementById('message-input');
+            const messagesList = document.getElementById('messages');
+
+            // Suponiendo que has obtenido el userId y toUserId de alguna manera (ej. desde la sesión)
+            const userId = '<%= usuario.id %>'; // El ID del usuario actual
+            const toUserId = '<%= producto.Usuario %>'; // El ID del usuario al que se envía el mensaje
+
+            // Registra el usuario con su ID de usuario
+            socket.emit('register', { userId: userId });
+
+            socket.emit('solicitar historial', { fromUserId: userId, toUserId: toUserId });
+
+            messageForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (messageInput.value.trim()) {
+                    sendPrivateMessage(toUserId, messageInput.value, userId);
+                    messageInput.value = '';
+                }
+            });
+
+            socket.on('historial mensajes', (mensajes) => {
+                mensajes.forEach((mensaje) => {
+                    const item = document.createElement('li');
+                    // Determina si el mensaje fue enviado por el usuario actual
+                });
+                mensajes.forEach((mensaje) => {
+                    const item = document.createElement('li');
+                    if (mensaje.de_usuario_id === userId) {
+                        item.classList.add('sent');
+                    } else {
+                        item.classList.add('received');
+                    }
+                    item.textContent = ` ${mensaje.mensaje}`;
+                    messagesList.appendChild(item);
+                });
+                // Desplazar la vista al último mensaje
+                messagesList.scrollTop = messagesList.scrollHeight;
+            });
+            function sendPrivateMessage(toUserId, messageContent, fromUserId) { // Agregar fromUserId aquí
+                const item = document.createElement('li');
+                item.classList.add('sent');
+                item.textContent = messageContent; // Puedes ajustar esto para coincidir con el formato de mensaje deseado
+                messagesList.appendChild(item);
+                messagesList.scrollTop = messagesList.scrollHeight;
+                socket.emit('private message', {
+                    content: messageContent,
+                    toUserId: toUserId,
+                    fromUserId: fromUserId // Asegúrate de enviar fromUserId
+                });
+            }
+
+            // Escucha mensajes privados entrantes
+            socket.on('private message', (message) => {
+                const item = document.createElement('li');
+                if (message.fromUserId === userId) {
+                    item.classList.add('sent');
+                } else {
+                    item.classList.add('received');
+                }
+                item.textContent = message.content;
+                messagesList.appendChild(item);
+                // Desplazar la vista al último mensaje
+                messagesList.scrollTop = messagesList.scrollHeight;
+            });
+
+        });
+    </script>
+    <style>
+        #messages li.sent {
+            background-color: #dcf8c6;
+            /* Color de fondo para mensajes enviados */
+            text-align: right;
+            /* Alinear texto a la derecha */
+            margin-left: 20%;
+            /* Espacio a la izquierda para diferenciar visualmente */
+        }
+
+        #messages li.received {
+            background-color: #ebebeb;
+            /* Color de fondo para mensajes recibidos */
+            text-align: left;
+            /* Alinear texto a la izquierda */
+            margin-right: 20%;
+            /* Espacio a la derecha para diferenciar visualmente */
+        }
+
+        /* Estilo para subrayar enlaces en la segunda barra de navegación cuando el cursor está encima */
+        .second-navbar .navbar-nav .nav-link:hover {
+            border-bottom: 2px solid black;
+
+        }
+
+        .change-color-on-hover-black {
+            color: green;
+            /* Establece el color predeterminado del texto como verde */
+            text-decoration: none;
+            /* Quita el subrayado predeterminado */
+        }
+
+        .change-color-on-hover-black:hover {
+            color: black;
+            /* Cambia este color al que desees */
+            cursor: pointer;
+        }
+
+        .main-content {
+            margin-top: 100px;
+            /* ajusta el valor según sea necesario */
+        }
+
+        .formulario {
+            display: none;
+            /* Por defecto, ocultar el formulario */
+            margin-top: 20px;
+            /* Ajusta el margen superior según sea necesario */
+        }
+
+        #abrirFormulario:hover {
+            border: 2px solid rgb(108, 108, 116);
+            /* Cambia el color y el grosor del borde según tus preferencias */
+        }
+
+        /* Estilos adicionales para mejorar la apariencia */
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+            /* Permite desplazamiento vertical si es necesario */
+            max-height: 60vh;
+            /* Ajusta la altura máxima del contenedor de mensajes */
+            background-color: #fff;
+            /* Fondo blanco para la lista de mensajes */
+            border: 1px solid #ccc;
+            /* Borde sutil para el contenedor de mensajes */
+            border-radius: 5px;
+            /* Bordes redondeados para el contenedor de mensajes */
+        }
+
+        #message-form {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        #message-input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Nav bar -->
+    <nav
+        class="navbar navbar-expand-lg navbar-nav-scroll bg-white border-bottom border-2 border-dark navbar-light mb-0 mt-0 fixed-top">
+        <div class="container-fluid">
+            <a href="/index">
+                <img src="http://localhost:3000/logoWalla.png" alt="" width="210" height="80"
+                    class="d-inline-block align-text-top">
+            </a>
+            <input class="form-control me-2 rounded-pill border-dark" style="width: 1150px;" type="search"
+                placeholder=" Buscar en todas las categorias">
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto  align-items-center ">
+                    <li class="nav-item">
+                        <i class="fa-regular fa-heart fa-2x"></i>
+                    </li>
+                    <li class="nav-item">
+                        <a class="navbar-brand ms-4 text-black" href="index.html">Favoritos </a>
+                    </li>
+                    <li class="nav-item">
+                        <i class="fa-regular fa-envelope fa-2x"></i>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active text-black" aria-current="page" href="personajes.html">Buzon</a>
+                    </li>
+                    <!-- Imagen dentro de un círculo -->
+                    <li class="nav-item">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden;">
+                            <img src="/imagenesUsuario/<%= imagenUser %>" alt="Imagen"
+                                style="width: 100%; border-radius: 50%;">
+                        </div>
+                    </li>
+                    <li class="d-flex">
+                        <a class="nav-link text-dark" href="Formulario.html">Tú</a>
+                    </li>
+                    <li class="d-flex">
+                        <form action="/tipoProducto" method="get">
+                            <button type="submit" class="btn rounded rounded-pill bg-success"><i
+                                    class="fa-solid fa-plus"></i>Añadir
+                                un
+                                producto</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor principal del contenido -->
+    <div class="container-fluid" style="background-color: #f4f5f7;">
+        <div class="row">
+            <!-- Barra de navegación izquierda -->
+            <nav class="col-lg-2 bg-white fixed-top" style="top: 100px; height: 100%;">
+                <div class="container-fluid">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Compras</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Ventas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Buzón</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Favoritos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Estadísticas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Monedero</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Configuración</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <div class="col-lg-2  bg-light">
+                <!-- Contenido principal de la página -->
+            </div>
+            <div class="col-lg-8 offset-lg-1 " style="margin-top: 8rem;">
+                <div class="row">
+                    <div class="col-12">
+                        <ul id="messages" class="list-unstyled"></ul>
+                        <form id="message-form" class="form-inline mt-3">
+                            <input id="message-input" type="text" class="form-control flex-grow-1 mr-2"
+                                placeholder="Escribe un mensaje aquí...">
+                            <button type="submit" class="btn btn-primary">Enviar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/cfbff32ceb.js" crossorigin="anonymous"></script>
+    <script>
+        // Tu JavaScript aquí
+    </script>
+</body>
+
+</html>
